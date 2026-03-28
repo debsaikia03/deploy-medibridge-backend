@@ -1,8 +1,11 @@
 import axios from "axios";
 
 // 🔹 FatSecret API Credentials
-const CLIENT_ID = "437d3dc2ee1d4ab0bde5d5783e40aa7b";
-const CLIENT_SECRET = "fba82038c9ca4efea5ea546fc32dda21";
+//const CLIENT_ID = "437d3dc2ee1d4ab0bde5d5783e40aa7b";
+//const CLIENT_SECRET = "fba82038c9ca4efea5ea546fc32dda21";
+
+const Client ID: "602f3dc41b7248cf82be249bc774f7d6";
+const Client Secret: "dff37088c7e24c7eabf731b8dad90b29";
 
 let fatsecretToken = null;
 let tokenExpiry = 0;
