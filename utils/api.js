@@ -56,7 +56,16 @@ export const getFoodInfo = async (foodName, barcode) => {
   try {
     // === 1️⃣ OPENFOODFACTS FOR BARCODE === //
     if (barcode) {
-      const res = await axios.get(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+      let res;
+      try {
+        res = await axios.get(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json`);
+      } catch (err) {
+        if (err.response && err.response.status === 404) {
+          throw new Error("No product found with the provided barcode");
+        }
+        throw err;
+      }
+      
       if (res.data?.status !== 1 || !res.data?.product) {
         throw new Error("No product found with the provided barcode");
       }
@@ -186,6 +195,7 @@ export const calculateHealthScore = async (userMetrics, foodName, barcode) => {
   const bmi = userMetrics.weight / (heightInMeters * heightInMeters);
 
   const nutriments = foodInfo.nutrition || {};
+  const calories = nutriments["energy_100g"] ?? 0;
   const fat = nutriments["fat_100g"] ?? 0;
   const saturatedFat = nutriments["saturated-fat_100g"] ?? 0;
   const sugars = nutriments["sugars_100g"] ?? 0;
@@ -195,28 +205,54 @@ export const calculateHealthScore = async (userMetrics, foodName, barcode) => {
 
   let score = 100;
 
+  // Baseline deductions for excessive unhealthy nutrients
+  if (calories > 300) score -= 15;
+  else if (calories > 150) score -= 5;
+
+  if (fat > 15) score -= 15;
+  else if (fat > 5) score -= 5;
+
+  if (saturatedFat > 5) score -= 15;
+  else if (saturatedFat > 2) score -= 5;
+
+  if (sugars > 10) score -= 20;
+  else if (sugars > 3) score -= 10;
+
+  if (salt > 1.2) score -= 15;
+  else if (salt > 0.4) score -= 5;
+
+  // Deductions for missing healthy nutrients
+  if (fiber < 1) score -= 10;
+  else if (fiber < 3) score -= 5;
+
+  if (proteins < 3) score -= 10;
+  else if (proteins < 8) score -= 5;
+
+  // BMI penalty
   if (bmi < 18.5) score -= 10;
   else if (bmi > 25) score -= 10;
-
-  if (fat > 20) score -= 10;
-  if (saturatedFat > 10) score -= 10;
-  if (sugars > 15) score -= 10;
-  if (fiber < 3) score -= 5;
-  if (proteins < 5) score -= 5;
-  if (salt > 1.5) score -= 10;
 
   score = Math.max(0, Math.min(100, score));
 
   let grade = "E";
-  if (score >= 90) grade = "A";
-  else if (score >= 80) grade = "B";
-  else if (score >= 70) grade = "C";
-  else if (score >= 60) grade = "D";
-
   let advice = "";
-  if (score >= 80) advice = "Good nutritional profile.";
-  else if (score >= 60) advice = "Moderate nutritional content; watch fats and sugars.";
-  else advice = "Poor nutritional content; consider healthier options.";
+
+  if (score >= 80) {
+    grade = "A";
+    advice = "Good nutritional profile. Great choice for a balanced diet.";
+  } else if (score >= 60) {
+    grade = "B";
+    advice = "Moderate nutritional content. Limit portion sizes.";
+  } else if (score >= 40) {
+    grade = "C";
+    advice = "Fair nutritional content. Contains some beneficial nutrients but also high levels of sugar, fat, or salt.";
+  } else if (score >= 20) {
+    grade = "D";
+    advice = "Poor nutritional content. Consume sparingly and watch intake.";
+  } else {
+    grade = "E";
+    advice = "Very poor nutritional profile. Advise to avoid or consume rarely.";
+  }
 
   return {
     score,
