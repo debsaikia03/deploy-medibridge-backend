@@ -16,6 +16,9 @@ export const fetchFoodInfo = async (req, res) => {
       data: result,
     });
   } catch (error) {
+    if (error.message.includes("No product found")) {
+      return res.status(404).json({ success: false, message: error.message });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -41,6 +44,9 @@ export const getHealthScore = async (req, res) => {
       data: result,
     });
   } catch (error) {
+    if (error.message.includes("No product found")) {
+      return res.status(404).json({ success: false, message: error.message });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -58,6 +64,9 @@ export const getDietaryCheck = async (req, res) => {
       data: result,
     });
   } catch (error) {
+    if (error.message.includes("No product found")) {
+      return res.status(404).json({ success: false, message: error.message });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
